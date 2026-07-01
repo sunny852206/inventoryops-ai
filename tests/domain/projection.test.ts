@@ -48,4 +48,36 @@ describe("projectInventory", () => {
       },
     ]);
   });
+
+  it("uses corrected events to set the current quantity", () => {
+    const events: InventoryEvent[] = [
+      {
+        id: "evt_1",
+        type: "PURCHASED",
+        itemName: "eggs",
+        quantity: 12,
+        unit: "count",
+        occurredAt: "2026-06-26T10:00:00Z",
+      },
+      {
+        id: "evt_2",
+        type: "CORRECTED",
+        itemName: "eggs",
+        quantity: 5,
+        unit: "count",
+        occurredAt: "2026-06-27T10:00:00Z",
+      },
+    ];
+
+    const result = projectInventory(events);
+
+    expect(result).toEqual([
+      {
+        itemName: "eggs",
+        quantity: 5,
+        unit: "count",
+        lastUpdatedAt: "2026-06-27T10:00:00Z",
+      },
+    ]);
+  });
 });
