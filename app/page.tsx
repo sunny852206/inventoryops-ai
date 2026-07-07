@@ -1,3 +1,5 @@
+import { OperationalInputPanel } from "../components/OperationalInputPanel";
+
 const workflowSteps = [
   "Input",
   "Extraction",
@@ -24,7 +26,22 @@ export default function Home() {
         </p>
       </section>
 
-      <section className="workspace" aria-labelledby="input-heading">
+      <OperationalInputPanel />
+
+      <section className="workflow-preview" aria-label="Workflow preview">
+        {workflowSteps.map((step, index) => (
+          <div className="workflow-item" key={step}>
+            <span>{step}</span>
+            {index < workflowSteps.length - 1 ? (
+              <span className="arrow" aria-hidden="true">
+                -&gt;
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </section>
+
+      {/* <section className="workspace" aria-labelledby="input-heading">
         <div className="input-panel">
           <label htmlFor="messy-input" id="input-heading">
             Messy operational input
@@ -52,7 +69,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </section> */}
     </main>
   );
 }
