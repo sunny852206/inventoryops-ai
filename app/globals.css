@@ -196,3 +196,45 @@ button:disabled {
   color: #067647;
   margin: 0;
 }
+
+.candidate-list {
+  display: grid;
+  gap: 16px;
+}
+
+.candidate-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.candidate-card h3 {
+  margin: 4px 0 16px;
+}
+
+.candidate-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.candidate-details {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.candidate-details div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.candidate-details dt {
+  color: var(--muted);
+}
+
+.candidate-details dd {
+  margin: 0;
+}

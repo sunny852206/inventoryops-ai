@@ -69,9 +69,43 @@ export function OperationalInputPanel() {
         ) : null}
 
         {candidateItems.length > 0 ? (
-          <p className="validation-success">
-            {candidateItems.length} candidate items passed validation.
-          </p>
+          <div className="candidate-list">
+            <p className="validation-success">
+              {candidateItems.length} candidate items passed validation.
+            </p>
+
+            {candidateItems.map((candidate, index) => (
+              <article
+                className="candidate-card"
+                key={`${candidate.name}-${index}`}
+              >
+                <p className="candidate-label">Candidate {index + 1}</p>
+
+                <h3>{candidate.name}</h3>
+
+                <dl className="candidate-details">
+                  <div>
+                    <dt>Quantity</dt>
+                    <dd>{candidate.quantity ?? "Not provided"}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Unit</dt>
+                    <dd>{candidate.unit ?? "Not provided"}</dd>
+                  </div>
+
+                  <div>
+                    <dt>Confidence</dt>
+                    <dd>
+                      {candidate.confidence !== undefined
+                        ? `${Math.round(candidate.confidence * 100)}%`
+                        : "Not provided"}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            ))}
+          </div>
         ) : null}
       </div>
 
