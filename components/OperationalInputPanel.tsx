@@ -1,9 +1,44 @@
 "use client";
 
 import { useState } from "react";
+import { extractedCandidateItemsSchema } from "../lib/domain/schemas";
+import type { ExtractedCandidateItem } from "../lib/domain/types";
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
+  const [candidateItems, setCandidateItems] = useState<
+    ExtractedCandidateItem[]
+  >([]);
+
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  function handleMockExtraction() {
+    const mockOutput: unknown = [
+      {
+        name: "eggs",
+        quantity: 12,
+        unit: "count",
+        confidence: 0.96,
+      },
+      {
+        name: "milk",
+        quantity: 1,
+        unit: "bottle",
+        confidence: 0.91,
+      },
+    ];
+
+    const result = extractedCandidateItemsSchema.safeParse(mockOutput);
+
+    if (!result.success) {
+      setCandidateItems([]);
+      setValidationError("Mock extraction failed validation.");
+      return;
+    }
+
+    setCandidateItems(result.data);
+    setValidationError(null);
+  }
 
   return (
     <section className="workspace" aria-labelledby="input-heading">
@@ -22,9 +57,22 @@ export function OperationalInputPanel() {
 
         <div className="input-meta">{operationalInput.length} characters</div>
 
-        <button type="button" disabled={operationalInput.trim().length === 0}>
+        <button
+          type="button"
+          disabled={operationalInput.trim().length === 0}
+          onClick={handleMockExtraction}
+        >
           Extract candidate events
         </button>
+        {validationError ? (
+          <p className="validation-error">{validationError}</p>
+        ) : null}
+
+        {candidateItems.length > 0 ? (
+          <p className="validation-success">
+            {candidateItems.length} candidate items passed validation.
+          </p>
+        ) : null}
       </div>
 
       <div className="preview-panel">

@@ -186,3 +186,13 @@ button:disabled {
   margin: 0;
   white-space: pre-wrap;
 }
+
+.validation-error {
+  color: #b42318;
+  margin: 0;
+}
+
+.validation-success {
+  color: #067647;
+  margin: 0;
+}
