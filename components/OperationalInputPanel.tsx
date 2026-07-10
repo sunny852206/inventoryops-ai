@@ -40,6 +40,38 @@ export function OperationalInputPanel() {
     setValidationError(null);
   }
 
+  function updateCandidateName(index: number, name: string) {
+    setCandidateItems((currentItems) =>
+      currentItems.map((candidate, candidateIndex) =>
+        candidateIndex === index ? { ...candidate, name } : candidate,
+      ),
+    );
+  }
+
+  function updateCandidateQuantity(index: number, quantityText: string) {
+    const quantity =
+      quantityText.trim().length === 0 ? undefined : Number(quantityText);
+
+    setCandidateItems((currentItems) =>
+      currentItems.map((candidate, candidateIndex) =>
+        candidateIndex === index ? { ...candidate, quantity } : candidate,
+      ),
+    );
+  }
+
+  function updateCandidateUnit(index: number, unit: string) {
+    setCandidateItems((currentItems) =>
+      currentItems.map((candidate, candidateIndex) =>
+        candidateIndex === index
+          ? {
+              ...candidate,
+              unit: unit.trim().length === 0 ? undefined : unit,
+            }
+          : candidate,
+      ),
+    );
+  }
+
   return (
     <section className="workspace" aria-labelledby="input-heading">
       <div className="input-panel">
@@ -73,36 +105,55 @@ export function OperationalInputPanel() {
             <p className="validation-success">
               {candidateItems.length} candidate items passed validation.
             </p>
-
             {candidateItems.map((candidate, index) => (
-              <article
-                className="candidate-card"
-                key={`${candidate.name}-${index}`}
-              >
+              <article className="candidate-card" key={index}>
                 <p className="candidate-label">Candidate {index + 1}</p>
 
-                <h3>{candidate.name}</h3>
+                <div className="candidate-details">
+                  <label>
+                    Name
+                    <input
+                      type="text"
+                      value={candidate.name}
+                      onChange={(event) =>
+                        updateCandidateName(index, event.target.value)
+                      }
+                    />
+                  </label>
 
-                <dl className="candidate-details">
-                  <div>
-                    <dt>Quantity</dt>
-                    <dd>{candidate.quantity ?? "Not provided"}</dd>
-                  </div>
+                  <label>
+                    Quantity
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={candidate.quantity ?? ""}
+                      onChange={(event) =>
+                        updateCandidateQuantity(index, event.target.value)
+                      }
+                    />
+                  </label>
 
-                  <div>
-                    <dt>Unit</dt>
-                    <dd>{candidate.unit ?? "Not provided"}</dd>
-                  </div>
+                  <label>
+                    Unit
+                    <input
+                      type="text"
+                      value={candidate.unit ?? ""}
+                      onChange={(event) =>
+                        updateCandidateUnit(index, event.target.value)
+                      }
+                    />
+                  </label>
 
-                  <div>
-                    <dt>Confidence</dt>
-                    <dd>
+                  <div className="candidate-readonly-field">
+                    <span>Confidence</span>
+                    <strong>
                       {candidate.confidence !== undefined
                         ? `${Math.round(candidate.confidence * 100)}%`
                         : "Not provided"}
-                    </dd>
+                    </strong>
                   </div>
-                </dl>
+                </div>
               </article>
             ))}
           </div>
@@ -114,7 +165,7 @@ export function OperationalInputPanel() {
         <p>
           {operationalInput.trim().length > 0
             ? operationalInput
-            : "Typed input will appear here before mock extraction is added."}
+            : "Input preview will appear here."}
         </p>
       </div>
     </section>

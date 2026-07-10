@@ -26,6 +26,7 @@ body {
 }
 
 button,
+input,
 textarea {
   font: inherit;
 }
@@ -80,7 +81,8 @@ h1 {
 }
 
 .input-panel,
-.workflow-preview {
+.workflow-preview,
+.preview-panel {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
@@ -104,7 +106,7 @@ textarea {
   border-radius: 6px;
   padding: 14px;
   background: var(--disabled);
-  color: var(--muted);
+  color: var(--foreground);
   line-height: 1.5;
 }
 
@@ -116,11 +118,90 @@ button {
   background: var(--accent);
   color: #ffffff;
   font-weight: 700;
+  cursor: pointer;
 }
 
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.input-meta {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.validation-error {
+  margin: 0;
+  color: #b42318;
+}
+
+.validation-success {
+  margin: 0;
+  color: #067647;
+}
+
+.candidate-list {
+  display: grid;
+  gap: 16px;
+}
+
+.candidate-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 16px;
+}
+
+.candidate-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.candidate-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.candidate-details label {
+  display: grid;
+  gap: 6px;
+}
+
+.candidate-details input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--foreground);
+}
+
+.candidate-readonly-field {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.candidate-readonly-field span {
+  color: var(--muted);
+}
+
+.preview-panel {
+  padding: 20px;
+}
+
+.preview-panel h2 {
+  margin: 0 0 12px;
+}
+
+.preview-panel p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+  white-space: pre-wrap;
 }
 
 .workflow-preview {
@@ -162,79 +243,4 @@ button:disabled {
   button {
     width: 100%;
   }
-}
-
-.input-meta {
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.preview-panel {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
-  padding: 20px;
-}
-
-.preview-panel h2 {
-  margin: 0 0 12px;
-}
-
-.preview-panel p {
-  color: var(--muted);
-  line-height: 1.6;
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.validation-error {
-  color: #b42318;
-  margin: 0;
-}
-
-.validation-success {
-  color: #067647;
-  margin: 0;
-}
-
-.candidate-list {
-  display: grid;
-  gap: 16px;
-}
-
-.candidate-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--panel);
-  padding: 16px;
-}
-
-.candidate-card h3 {
-  margin: 4px 0 16px;
-}
-
-.candidate-label {
-  color: var(--muted);
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.candidate-details {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-}
-
-.candidate-details div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.candidate-details dt {
-  color: var(--muted);
-}
-
-.candidate-details dd {
-  margin: 0;
 }
