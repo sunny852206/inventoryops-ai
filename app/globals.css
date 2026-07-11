@@ -271,3 +271,42 @@ button:disabled {
   margin: 4px 0;
   color: var(--muted);
 }
+
+.recommendations {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.recommendations h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.recommendation-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbf9;
+  padding: 14px;
+}
+
+.recommendation-card h3 {
+  margin: 4px 0 8px;
+}
+
+.recommendation-card p {
+  margin: 4px 0;
+  color: var(--muted);
+}
+
+.recommendation-card ul {
+  margin: 10px 0 0;
+  padding-left: 20px;
+  color: var(--muted);
+}
+
+.recommendation-type {
+  color: var(--accent-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+}

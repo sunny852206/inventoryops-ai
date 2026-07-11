@@ -7,6 +7,7 @@ import type {
   InventoryEvent,
 } from "../lib/domain/types";
 import { projectInventory } from "../lib/domain/projection";
+import { scoreInventory } from "../lib/domain/scoring";
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
@@ -16,8 +17,10 @@ export function OperationalInputPanel() {
   const [confirmedEvents, setConfirmedEvents] = useState<InventoryEvent[]>([]); // user confirmed event
   const [validationError, setValidationError] = useState<string | null>(null);
   const projectedInventory = projectInventory(confirmedEvents);
+  const recommendations = scoreInventory(projectedInventory);
 
   function handleMockExtraction() {
+    // Temporary sample data until real extraction is connected.
     const mockOutput: unknown = [
       {
         name: "eggs",
@@ -214,6 +217,28 @@ export function OperationalInputPanel() {
                   {item.unit ? ` ${item.unit}` : ""}
                 </p>
                 <p>Last updated: {item.lastUpdatedAt}</p>
+              </article>
+            ))}
+          </div>
+        ) : null}
+
+        {recommendations.length > 0 ? (
+          <div className="recommendations">
+            <h2>Recommendations</h2>
+
+            {recommendations.map((recommendation) => (
+              <article className="recommendation-card" key={recommendation.id}>
+                <p className="recommendation-type">{recommendation.type}</p>
+                <h3>{recommendation.itemName}</h3>
+                <p>Score: {recommendation.score}</p>
+
+                <ul>
+                  {recommendation.factors.map((factor) => (
+                    <li key={factor.label}>
+                      {factor.label}: {factor.explanation}
+                    </li>
+                  ))}
+                </ul>
               </article>
             ))}
           </div>
