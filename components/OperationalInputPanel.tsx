@@ -6,6 +6,7 @@ import type {
   ExtractedCandidateItem,
   InventoryEvent,
 } from "../lib/domain/types";
+import { projectInventory } from "../lib/domain/projection";
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
@@ -14,6 +15,7 @@ export function OperationalInputPanel() {
   >([]); // review/edit draft
   const [confirmedEvents, setConfirmedEvents] = useState<InventoryEvent[]>([]); // user confirmed event
   const [validationError, setValidationError] = useState<string | null>(null);
+  const projectedInventory = projectInventory(confirmedEvents);
 
   function handleMockExtraction() {
     const mockOutput: unknown = [
@@ -190,10 +192,31 @@ export function OperationalInputPanel() {
             </button>
           </div>
         ) : null}
+
         {confirmedEvents.length > 0 ? (
           <p className="validation-success">
             {confirmedEvents.length} inventory events confirmed.
           </p>
+        ) : null}
+
+        {projectedInventory.length > 0 ? (
+          <div className="projected-inventory">
+            <h2>Projected inventory</h2>
+
+            {projectedInventory.map((item, index) => (
+              <article
+                className="inventory-card"
+                key={`${item.itemName}-${index}`}
+              >
+                <h3>{item.itemName}</h3>
+                <p>
+                  Quantity: {item.quantity}
+                  {item.unit ? ` ${item.unit}` : ""}
+                </p>
+                <p>Last updated: {item.lastUpdatedAt}</p>
+              </article>
+            ))}
+          </div>
         ) : null}
       </div>
 

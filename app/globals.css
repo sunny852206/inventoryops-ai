@@ -244,3 +244,30 @@ button:disabled {
     width: 100%;
   }
 }
+
+.projected-inventory {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.projected-inventory h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.inventory-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fafbf9;
+  padding: 14px;
+}
+
+.inventory-card h3 {
+  margin: 0 0 8px;
+}
+
+.inventory-card p {
+  margin: 4px 0;
+  color: var(--muted);
+}
