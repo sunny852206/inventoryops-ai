@@ -2,14 +2,17 @@
 
 import { useState } from "react";
 import { extractedCandidateItemsSchema } from "../lib/domain/schemas";
-import type { ExtractedCandidateItem } from "../lib/domain/types";
+import type {
+  ExtractedCandidateItem,
+  InventoryEvent,
+} from "../lib/domain/types";
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
   const [candidateItems, setCandidateItems] = useState<
     ExtractedCandidateItem[]
-  >([]);
-
+  >([]); // review/edit draft
+  const [confirmedEvents, setConfirmedEvents] = useState<InventoryEvent[]>([]); // user confirmed event
   const [validationError, setValidationError] = useState<string | null>(null);
 
   function handleMockExtraction() {
@@ -70,6 +73,31 @@ export function OperationalInputPanel() {
           : candidate,
       ),
     );
+  }
+
+  function handleConfirmCandidates() {
+    const result = extractedCandidateItemsSchema.safeParse(candidateItems);
+
+    if (!result.success) {
+      setValidationError("Reviewed candidates failed validation.");
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+
+    const events: InventoryEvent[] = result.data.map((candidate, index) => ({
+      id: `evt_${nowIso}_${index}`,
+      type: "PURCHASED",
+      itemName: candidate.name,
+      quantity: candidate.quantity ?? 1,
+      unit: candidate.unit,
+      occurredAt: nowIso,
+      notes: candidate.notes,
+      sourceText: operationalInput,
+    }));
+
+    setConfirmedEvents(events);
+    setValidationError(null);
   }
 
   return (
@@ -156,7 +184,16 @@ export function OperationalInputPanel() {
                 </div>
               </article>
             ))}
+
+            <button type="button" onClick={handleConfirmCandidates}>
+              Confirm reviewed candidates
+            </button>
           </div>
+        ) : null}
+        {confirmedEvents.length > 0 ? (
+          <p className="validation-success">
+            {confirmedEvents.length} inventory events confirmed.
+          </p>
         ) : null}
       </div>
 
