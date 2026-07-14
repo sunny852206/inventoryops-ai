@@ -9,6 +9,9 @@ import type {
 import { projectInventory } from "../lib/domain/projection";
 import { scoreInventory } from "../lib/domain/scoring";
 
+const SAMPLE_OPERATIONAL_NOTE =
+  "Bought 12 eggs and 1 bottle of milk after checking the pantry. The milk should be used within the next week.";
+
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
   const [candidateItems, setCandidateItems] = useState<
@@ -18,9 +21,13 @@ export function OperationalInputPanel() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const projectedInventory = projectInventory(confirmedEvents);
   const recommendations = scoreInventory(projectedInventory);
+  const workflowStatus = getWorkflowStatus({
+    hasInput: operationalInput.trim().length > 0,
+    candidateCount: candidateItems.length,
+    confirmedEventCount: confirmedEvents.length,
+  });
 
   function handleMockExtraction() {
-    // Temporary sample data until real extraction is connected.
     const mockOutput: unknown = [
       {
         name: "eggs",
@@ -45,6 +52,11 @@ export function OperationalInputPanel() {
     }
 
     setCandidateItems(result.data);
+    setValidationError(null);
+  }
+
+  function handleUseSampleInput() {
+    setOperationalInput(SAMPLE_OPERATIONAL_NOTE);
     setValidationError(null);
   }
 
@@ -108,33 +120,48 @@ export function OperationalInputPanel() {
   return (
     <section className="workspace" aria-labelledby="input-heading">
       <div className="input-panel">
-        <label htmlFor="operational-input" id="input-heading">
-          Operational input
-        </label>
+        <p className="workflow-status">{workflowStatus}</p>
 
-        <textarea
-          id="operational-input"
-          value={operationalInput}
-          onChange={(event) => setOperationalInput(event.target.value)}
-          placeholder="Paste purchase notes, usage notes, spoilage notes, or restocking updates here."
-          rows={8}
-        />
+        <div className="workflow-section">
+          <div className="section-header">
+            <label htmlFor="operational-input" id="input-heading">
+              Operational input
+            </label>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={handleUseSampleInput}
+            >
+              Use sample input
+            </button>
+          </div>
 
-        <div className="input-meta">{operationalInput.length} characters</div>
+          <textarea
+            id="operational-input"
+            value={operationalInput}
+            onChange={(event) => setOperationalInput(event.target.value)}
+            placeholder="Paste purchase notes, usage notes, spoilage notes, or restocking updates here."
+            rows={8}
+          />
 
-        <button
-          type="button"
-          disabled={operationalInput.trim().length === 0}
-          onClick={handleMockExtraction}
-        >
-          Extract candidate events
-        </button>
+          <div className="input-meta">{operationalInput.length} characters</div>
+
+          <button
+            type="button"
+            disabled={operationalInput.trim().length === 0}
+            onClick={handleMockExtraction}
+          >
+            Extract candidate events
+          </button>
+        </div>
+
         {validationError ? (
           <p className="validation-error">{validationError}</p>
         ) : null}
 
         {candidateItems.length > 0 ? (
-          <div className="candidate-list">
+          <div className="workflow-section candidate-list">
+            <h2>Review candidates</h2>
             <p className="validation-success">
               {candidateItems.length} candidate items passed validation.
             </p>
@@ -197,13 +224,30 @@ export function OperationalInputPanel() {
         ) : null}
 
         {confirmedEvents.length > 0 ? (
-          <p className="validation-success">
-            {confirmedEvents.length} inventory events confirmed.
-          </p>
+          <div className="workflow-section confirmed-events">
+            <h2>Confirmed events</h2>
+            <p className="validation-success">
+              {confirmedEvents.length} inventory events confirmed.
+            </p>
+
+            <div className="event-list">
+              {confirmedEvents.map((event) => (
+                <article className="event-row" key={event.id}>
+                  <span className="event-type">{event.type}</span>
+                  <span>{event.itemName}</span>
+                  <span>
+                    {event.quantity}
+                    {event.unit ? ` ${event.unit}` : ""}
+                  </span>
+                  <time dateTime={event.occurredAt}>{event.occurredAt}</time>
+                </article>
+              ))}
+            </div>
+          </div>
         ) : null}
 
         {projectedInventory.length > 0 ? (
-          <div className="projected-inventory">
+          <div className="workflow-section projected-inventory">
             <h2>Projected inventory</h2>
 
             {projectedInventory.map((item, index) => (
@@ -223,7 +267,7 @@ export function OperationalInputPanel() {
         ) : null}
 
         {recommendations.length > 0 ? (
-          <div className="recommendations">
+          <div className="workflow-section recommendations">
             <h2>Recommendations</h2>
 
             {recommendations.map((recommendation) => (
@@ -255,4 +299,24 @@ export function OperationalInputPanel() {
       </div>
     </section>
   );
+}
+
+function getWorkflowStatus(input: {
+  hasInput: boolean;
+  candidateCount: number;
+  confirmedEventCount: number;
+}) {
+  if (input.confirmedEventCount > 0) {
+    return "Inventory events confirmed.";
+  }
+
+  if (input.candidateCount > 0) {
+    return "Candidate items are ready for review.";
+  }
+
+  if (input.hasInput) {
+    return "Operational input is ready for extraction.";
+  }
+
+  return "Waiting for operational input.";
 }
