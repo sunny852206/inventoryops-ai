@@ -5,12 +5,20 @@ import { extractedCandidateItemsSchema } from "../lib/domain/schemas";
 import type {
   ExtractedCandidateItem,
   InventoryEvent,
+  InventoryEventType,
 } from "../lib/domain/types";
 import { projectInventory } from "../lib/domain/projection";
 import { scoreInventory } from "../lib/domain/scoring";
 
 const SAMPLE_OPERATIONAL_NOTE =
-  "Bought 12 eggs and 1 bottle of milk after checking the pantry. The milk should be used within the next week.";
+  "Bought 12 eggs and 1 bottle of milk after checking the pantry. Used 3 eggs for breakfast.";
+
+const EVENT_TYPE_OPTIONS: InventoryEventType[] = [
+  "PURCHASED",
+  "CONSUMED",
+  "DISCARDED",
+  "CORRECTED",
+];
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
@@ -30,16 +38,25 @@ export function OperationalInputPanel() {
   function handleMockExtraction() {
     const mockOutput: unknown = [
       {
+        type: "PURCHASED",
         name: "eggs",
         quantity: 12,
         unit: "count",
         confidence: 0.96,
       },
       {
+        type: "PURCHASED",
         name: "milk",
         quantity: 1,
         unit: "bottle",
         confidence: 0.91,
+      },
+      {
+        type: "CONSUMED",
+        name: "eggs",
+        quantity: 3,
+        unit: "count",
+        confidence: 0.89,
       },
     ];
 
@@ -58,6 +75,14 @@ export function OperationalInputPanel() {
   function handleUseSampleInput() {
     setOperationalInput(SAMPLE_OPERATIONAL_NOTE);
     setValidationError(null);
+  }
+
+  function updateCandidateType(index: number, type: InventoryEventType) {
+    setCandidateItems((currentItems) =>
+      currentItems.map((candidate, candidateIndex) =>
+        candidateIndex === index ? { ...candidate, type } : candidate,
+      ),
+    );
   }
 
   function updateCandidateName(index: number, name: string) {
@@ -104,7 +129,7 @@ export function OperationalInputPanel() {
 
     const events: InventoryEvent[] = result.data.map((candidate, index) => ({
       id: `evt_${nowIso}_${index}`,
-      type: "PURCHASED",
+      type: candidate.type,
       itemName: candidate.name,
       quantity: candidate.quantity ?? 1,
       unit: candidate.unit,
@@ -170,6 +195,25 @@ export function OperationalInputPanel() {
                 <p className="candidate-label">Candidate {index + 1}</p>
 
                 <div className="candidate-details">
+                  <label>
+                    Event type
+                    <select
+                      value={candidate.type}
+                      onChange={(event) =>
+                        updateCandidateType(
+                          index,
+                          event.target.value as InventoryEventType,
+                        )
+                      }
+                    >
+                      {EVENT_TYPE_OPTIONS.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
                   <label>
                     Name
                     <input

@@ -12,6 +12,7 @@ export type RecommendationType =
 export type AiRequestPurpose = "EXTRACTION" | "EXPLANATION";
 
 export type ExtractedCandidateItem = {
+  type: InventoryEventType;
   name: string;
   quantity?: number;
   unit?: string;

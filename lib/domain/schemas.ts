@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const extractedCandidateItemSchema = z.object({
+  type: z.enum(["PURCHASED", "CONSUMED", "DISCARDED", "CORRECTED"]),
   name: z.string().min(1),
   quantity: z.number().positive().optional(),
   unit: z.string().optional(),
