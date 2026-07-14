@@ -190,125 +190,147 @@ export function OperationalInputPanel() {
   }
 
   return (
-    <section className="workspace" aria-labelledby="input-heading">
+    <section className="workspace" aria-labelledby="capture-heading">
       <div className="input-panel">
         <p className="workflow-status">{workflowStatus}</p>
 
-        <div className="workflow-section">
-          <div className="section-header">
-            <label htmlFor="operational-input" id="input-heading">
-              Operational input
-            </label>
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={handleUseSampleInput}
-            >
-              Use sample input
-            </button>
-          </div>
-
-          <p className="section-description">
-            Use messy operational text for the faster extraction path.
-          </p>
-
-          <textarea
-            id="operational-input"
-            value={operationalInput}
-            onChange={(event) => setOperationalInput(event.target.value)}
-            placeholder="Paste purchase notes, usage notes, spoilage notes, or restocking updates here."
-            rows={8}
-          />
-
-          <div className="input-meta">{operationalInput.length} characters</div>
-
-          <button
-            type="button"
-            disabled={operationalInput.trim().length === 0}
-            onClick={handleMockExtraction}
-          >
-            Extract candidate events
-          </button>
-        </div>
-
-        <div className="workflow-section">
+        <div className="workflow-section input-methods">
           <div>
-            <h2>Manual event entry</h2>
+            <h2 id="capture-heading">Capture</h2>
             <p className="section-description">
-              Add accurate structured input directly to the candidate review
-              queue.
+              Capture operational updates as reviewable candidate events.
             </p>
           </div>
 
-          <form className="manual-entry-form" onSubmit={handleAddManualCandidate}>
-            <div className="manual-entry-fields">
-              <label>
-                Event type
-                <select
-                  value={manualEventType}
-                  onChange={(event) =>
-                    setManualEventType(
-                      event.target.value as InventoryEventType,
-                    )
-                  }
+          <div className="input-mode-grid">
+            <section
+              className="input-mode"
+              aria-labelledby="text-input-heading"
+            >
+              <div className="input-mode-header">
+                <div>
+                  <h3 id="text-input-heading">Text input</h3>
+                  <p className="section-description">
+                    Extract reviewable candidates from an operational note.
+                  </p>
+                </div>
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={handleUseSampleInput}
                 >
-                  {EVENT_TYPE_OPTIONS.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                  Use sample input
+                </button>
+              </div>
 
-              <label>
-                Item name
-                <input
-                  type="text"
-                  value={manualItemName}
-                  onChange={(event) => setManualItemName(event.target.value)}
-                />
-              </label>
+              <label htmlFor="operational-input">Operational note</label>
+              <textarea
+                id="operational-input"
+                value={operationalInput}
+                onChange={(event) => setOperationalInput(event.target.value)}
+                placeholder="Paste purchase notes, usage notes, spoilage notes, or restocking updates here."
+                rows={8}
+              />
 
-              <label>
-                Quantity
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={manualQuantity}
-                  onChange={(event) => setManualQuantity(event.target.value)}
-                />
-              </label>
+              <div className="input-meta">
+                {operationalInput.length} characters
+              </div>
 
-              <label>
-                Unit
-                <input
-                  type="text"
-                  value={manualUnit}
-                  onChange={(event) => setManualUnit(event.target.value)}
-                />
-              </label>
-            </div>
+              <button
+                type="button"
+                disabled={operationalInput.trim().length === 0}
+                onClick={handleMockExtraction}
+              >
+                Extract candidate events
+              </button>
+            </section>
 
-            {manualValidationError ? (
-              <p className="validation-error" role="alert">
-                {manualValidationError}
-              </p>
-            ) : null}
+            <section
+              className="input-mode"
+              aria-labelledby="structured-entry-heading"
+            >
+              <div>
+                <h3 id="structured-entry-heading">Structured entry</h3>
+                <p className="section-description">
+                  Add one event to the review queue.
+                </p>
+              </div>
 
-            <button type="submit">Add candidate event</button>
-          </form>
+              <form
+                className="manual-entry-form"
+                onSubmit={handleAddManualCandidate}
+              >
+                <div className="manual-entry-fields">
+                  <label>
+                    Event type
+                    <select
+                      value={manualEventType}
+                      onChange={(event) =>
+                        setManualEventType(
+                          event.target.value as InventoryEventType,
+                        )
+                      }
+                    >
+                      {EVENT_TYPE_OPTIONS.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label>
+                    Item name
+                    <input
+                      type="text"
+                      value={manualItemName}
+                      onChange={(event) => setManualItemName(event.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    Quantity
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      value={manualQuantity}
+                      onChange={(event) => setManualQuantity(event.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    Unit
+                    <input
+                      type="text"
+                      value={manualUnit}
+                      onChange={(event) => setManualUnit(event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                {manualValidationError ? (
+                  <p className="validation-error" role="alert">
+                    {manualValidationError}
+                  </p>
+                ) : null}
+
+                <button type="submit">Add candidate event</button>
+              </form>
+            </section>
+          </div>
         </div>
 
         {validationError ? (
           <p className="validation-error">{validationError}</p>
         ) : null}
 
-        {candidateItems.length > 0 ? (
-          <div className="workflow-section candidate-list">
-            <h2>Review candidates</h2>
+        <div className="workflow-section candidate-list">
+          <h2>Review queue</h2>
+          {candidateItems.length > 0 ? (
+            <>
             <p className="validation-success">
-              {candidateItems.length} candidate items passed validation.
+              {candidateItems.length} candidate events ready for review.
             </p>
             {candidateItems.map((candidate, index) => (
               <article className="candidate-card" key={index}>
@@ -384,12 +406,18 @@ export function OperationalInputPanel() {
             <button type="button" onClick={handleConfirmCandidates}>
               Confirm reviewed candidates
             </button>
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <p className="empty-state">
+              No events in the review queue. Capture text or add a structured entry.
+            </p>
+          )}
+        </div>
 
-        {confirmedEvents.length > 0 ? (
-          <div className="workflow-section confirmed-events">
-            <h2>Confirmed events</h2>
+        <div className="workflow-section confirmed-events">
+          <h2>Event history</h2>
+          {confirmedEvents.length > 0 ? (
+            <>
             <p className="validation-success">
               {confirmedEvents.length} inventory events confirmed.
             </p>
@@ -403,16 +431,24 @@ export function OperationalInputPanel() {
                     {event.quantity}
                     {event.unit ? ` ${event.unit}` : ""}
                   </span>
-                  <time dateTime={event.occurredAt}>{event.occurredAt}</time>
+                  <time dateTime={event.occurredAt}>
+                    {formatDisplayDateTime(event.occurredAt)}
+                  </time>
                 </article>
               ))}
             </div>
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <p className="empty-state">
+              No confirmed events. Reviewed candidates appear here after confirmation.
+            </p>
+          )}
+        </div>
 
-        {projectedInventory.length > 0 ? (
-          <div className="workflow-section projected-inventory">
-            <h2>Projected inventory</h2>
+        <div className="workflow-section projected-inventory">
+          <h2>Inventory state</h2>
+          {projectedInventory.length > 0 ? (
+            <>
 
             {projectedInventory.map((item, index) => (
               <article
@@ -424,15 +460,21 @@ export function OperationalInputPanel() {
                   Quantity: {item.quantity}
                   {item.unit ? ` ${item.unit}` : ""}
                 </p>
-                <p>Last updated: {item.lastUpdatedAt}</p>
+                <p>Last updated: {formatDisplayDateTime(item.lastUpdatedAt)}</p>
               </article>
             ))}
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <p className="empty-state">
+              Confirmed events project the current inventory state here.
+            </p>
+          )}
+        </div>
 
-        {recommendations.length > 0 ? (
-          <div className="workflow-section recommendations">
-            <h2>Recommendations</h2>
+        <div className="workflow-section recommendations">
+          <h2>Recommendations</h2>
+          {recommendations.length > 0 ? (
+            <>
 
             {recommendations.map((recommendation) => (
               <article className="recommendation-card" key={recommendation.id}>
@@ -449,18 +491,36 @@ export function OperationalInputPanel() {
                 </ul>
               </article>
             ))}
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <p className="empty-state">
+              Recommendations appear when inventory state requires action.
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="preview-panel">
-        <h2>Input preview</h2>
-        <p>
-          {operationalInput.trim().length > 0
-            ? operationalInput
-            : "Input preview will appear here."}
-        </p>
-      </div>
+      <aside className="workflow-snapshot" aria-labelledby="workflow-snapshot-heading">
+        <h2 id="workflow-snapshot-heading">Workflow snapshot</h2>
+        <dl className="snapshot-list">
+          <div className="snapshot-item">
+            <dt>Candidate events</dt>
+            <dd>{candidateItems.length}</dd>
+          </div>
+          <div className="snapshot-item">
+            <dt>Confirmed events</dt>
+            <dd>{confirmedEvents.length}</dd>
+          </div>
+          <div className="snapshot-item">
+            <dt>Inventory items</dt>
+            <dd>{projectedInventory.length}</dd>
+          </div>
+          <div className="snapshot-item">
+            <dt>Recommendations</dt>
+            <dd>{recommendations.length}</dd>
+          </div>
+        </dl>
+      </aside>
     </section>
   );
 }
@@ -483,4 +543,11 @@ function getWorkflowStatus(input: {
   }
 
   return "Waiting for operational input.";
+}
+
+function formatDisplayDateTime(isoDate: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(isoDate));
 }

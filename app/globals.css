@@ -76,22 +76,19 @@ h1 {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
   gap: 24px;
   align-items: start;
 }
 
 .input-panel,
-.workflow-preview,
-.preview-panel {
+.workflow-snapshot {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--panel);
 }
 
 .input-panel {
-  display: grid;
-  gap: 14px;
   padding: 20px;
 }
 
@@ -148,8 +145,19 @@ button:disabled {
   color: #067647;
 }
 
-.workflow-status {
+.empty-state {
   margin: 0;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 12px;
+  background: #fafbf9;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.workflow-status {
+  margin: 0 0 24px;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 10px 12px;
@@ -162,17 +170,24 @@ button:disabled {
   display: grid;
   gap: 12px;
   border-top: 1px solid var(--border);
-  padding-top: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
 }
 
-.workflow-section:first-of-type {
+.input-panel > .input-methods {
   border-top: 0;
+  margin-top: 0;
   padding-top: 0;
 }
 
 .workflow-section h2 {
   margin: 0;
   font-size: 1.1rem;
+}
+
+.workflow-section h3 {
+  margin: 0;
+  font-size: 1rem;
 }
 
 .section-description {
@@ -182,11 +197,31 @@ button:disabled {
   line-height: 1.5;
 }
 
-.section-header {
+.input-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.input-mode {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafbf9;
+}
+
+.input-mode-header {
   display: flex;
   gap: 12px;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+}
+
+.input-mode-header .secondary-button {
+  white-space: nowrap;
 }
 
 .candidate-list {
@@ -209,6 +244,7 @@ button:disabled {
 
 .candidate-details {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 12px;
 }
@@ -237,7 +273,7 @@ button:disabled {
 
 .manual-entry-fields {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.4fr) minmax(110px, 0.7fr) minmax(120px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -247,6 +283,7 @@ button:disabled {
 }
 
 .candidate-readonly-field {
+  grid-column: 1 / -1;
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -283,45 +320,47 @@ button:disabled {
   font-weight: 700;
 }
 
-.preview-panel {
+.workflow-snapshot {
+  display: grid;
+  gap: 16px;
   padding: 20px;
 }
 
-.preview-panel h2 {
-  margin: 0 0 12px;
-}
-
-.preview-panel p {
+.workflow-snapshot h2 {
   margin: 0;
-  color: var(--muted);
-  line-height: 1.6;
-  white-space: pre-wrap;
+  font-size: 1.1rem;
 }
 
-.workflow-preview {
-  display: flex;
-  flex-wrap: wrap;
+.snapshot-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  padding: 20px;
+  margin: 0;
 }
 
-.workflow-item {
-  display: inline-flex;
-  gap: 10px;
-  align-items: center;
-  color: var(--accent-strong);
-  font-weight: 700;
-}
-
-.workflow-item span:first-child {
+.snapshot-item {
   border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 8px 10px;
+  border-radius: 6px;
+  padding: 12px;
   background: #fafbf9;
 }
 
-.arrow {
+.snapshot-item dt {
   color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.snapshot-item dd {
+  margin: 6px 0 0;
+  color: var(--accent-strong);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+@media (max-width: 1000px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 760px) {
@@ -330,11 +369,11 @@ button:disabled {
     padding: 32px 0;
   }
 
-  .workspace {
+  .input-mode-grid {
     grid-template-columns: 1fr;
   }
 
-  .section-header {
+  .input-mode-header {
     align-items: stretch;
     flex-direction: column;
   }
@@ -343,7 +382,12 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .candidate-details,
   .manual-entry-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .snapshot-list {
     grid-template-columns: 1fr;
   }
 
