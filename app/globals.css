@@ -27,6 +27,7 @@ body {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -174,6 +175,13 @@ button:disabled {
   font-size: 1.1rem;
 }
 
+.section-description {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .section-header {
   display: flex;
   gap: 12px;
@@ -210,13 +218,32 @@ button:disabled {
   gap: 6px;
 }
 
-.candidate-details input {
+.candidate-details input,
+.candidate-details select,
+.manual-entry-fields input,
+.manual-entry-fields select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 10px 12px;
   background: #ffffff;
   color: var(--foreground);
+}
+
+.manual-entry-form {
+  display: grid;
+  gap: 12px;
+}
+
+.manual-entry-fields {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.4fr) minmax(110px, 0.7fr) minmax(120px, 1fr);
+  gap: 12px;
+}
+
+.manual-entry-fields label {
+  display: grid;
+  gap: 6px;
 }
 
 .candidate-readonly-field {
@@ -313,6 +340,10 @@ button:disabled {
   }
 
   .event-row {
+    grid-template-columns: 1fr;
+  }
+
+  .manual-entry-fields {
     grid-template-columns: 1fr;
   }
 

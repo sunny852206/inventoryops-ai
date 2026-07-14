@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { extractedCandidateItemsSchema } from "../lib/domain/schemas";
+import {
+  extractedCandidateItemSchema,
+  extractedCandidateItemsSchema,
+} from "../lib/domain/schemas";
 import type {
   ExtractedCandidateItem,
   InventoryEvent,
@@ -27,6 +30,14 @@ export function OperationalInputPanel() {
   >([]); // review/edit draft
   const [confirmedEvents, setConfirmedEvents] = useState<InventoryEvent[]>([]); // user confirmed event
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [manualEventType, setManualEventType] =
+    useState<InventoryEventType>("PURCHASED");
+  const [manualItemName, setManualItemName] = useState("");
+  const [manualQuantity, setManualQuantity] = useState("");
+  const [manualUnit, setManualUnit] = useState("");
+  const [manualValidationError, setManualValidationError] = useState<
+    string | null
+  >(null);
   const projectedInventory = projectInventory(confirmedEvents);
   const recommendations = scoreInventory(projectedInventory);
   const workflowStatus = getWorkflowStatus({
@@ -74,6 +85,42 @@ export function OperationalInputPanel() {
 
   function handleUseSampleInput() {
     setOperationalInput(SAMPLE_OPERATIONAL_NOTE);
+    setValidationError(null);
+  }
+
+  function handleAddManualCandidate(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const quantity = Number(manualQuantity);
+
+    if (manualItemName.trim().length === 0) {
+      setManualValidationError("Enter an item name.");
+      return;
+    }
+
+    if (manualQuantity.trim().length === 0 || Number.isNaN(quantity)) {
+      setManualValidationError("Enter a valid quantity.");
+      return;
+    }
+
+    const result = extractedCandidateItemSchema.safeParse({
+      type: manualEventType,
+      name: manualItemName.trim(),
+      quantity,
+      unit: manualUnit.trim().length > 0 ? manualUnit.trim() : undefined,
+    });
+
+    if (!result.success) {
+      setManualValidationError("Quantity must be greater than zero.");
+      return;
+    }
+
+    setCandidateItems((currentItems) => [...currentItems, result.data]);
+    setManualEventType("PURCHASED");
+    setManualItemName("");
+    setManualQuantity("");
+    setManualUnit("");
+    setManualValidationError(null);
     setValidationError(null);
   }
 
@@ -161,6 +208,10 @@ export function OperationalInputPanel() {
             </button>
           </div>
 
+          <p className="section-description">
+            Use messy operational text for the faster extraction path.
+          </p>
+
           <textarea
             id="operational-input"
             value={operationalInput}
@@ -178,6 +229,75 @@ export function OperationalInputPanel() {
           >
             Extract candidate events
           </button>
+        </div>
+
+        <div className="workflow-section">
+          <div>
+            <h2>Manual event entry</h2>
+            <p className="section-description">
+              Add accurate structured input directly to the candidate review
+              queue.
+            </p>
+          </div>
+
+          <form className="manual-entry-form" onSubmit={handleAddManualCandidate}>
+            <div className="manual-entry-fields">
+              <label>
+                Event type
+                <select
+                  value={manualEventType}
+                  onChange={(event) =>
+                    setManualEventType(
+                      event.target.value as InventoryEventType,
+                    )
+                  }
+                >
+                  {EVENT_TYPE_OPTIONS.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                Item name
+                <input
+                  type="text"
+                  value={manualItemName}
+                  onChange={(event) => setManualItemName(event.target.value)}
+                />
+              </label>
+
+              <label>
+                Quantity
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={manualQuantity}
+                  onChange={(event) => setManualQuantity(event.target.value)}
+                />
+              </label>
+
+              <label>
+                Unit
+                <input
+                  type="text"
+                  value={manualUnit}
+                  onChange={(event) => setManualUnit(event.target.value)}
+                />
+              </label>
+            </div>
+
+            {manualValidationError ? (
+              <p className="validation-error" role="alert">
+                {manualValidationError}
+              </p>
+            ) : null}
+
+            <button type="submit">Add candidate event</button>
+          </form>
         </div>
 
         {validationError ? (
