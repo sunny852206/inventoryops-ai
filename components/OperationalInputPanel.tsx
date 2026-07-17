@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   extractedCandidateItemSchema,
   extractedCandidateItemsSchema,
@@ -23,12 +23,23 @@ const EVENT_TYPE_OPTIONS: InventoryEventType[] = [
   "CORRECTED",
 ];
 
+const CONFIRMED_EVENTS_STORAGE_KEY = "inventoryops.confirmedEvents";
+
+type EventEditDraft = {
+  type: InventoryEventType;
+  itemName: string;
+  quantity: string;
+  unit: string;
+};
+
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
   const [candidateItems, setCandidateItems] = useState<
     ExtractedCandidateItem[]
   >([]); // review/edit draft
   const [confirmedEvents, setConfirmedEvents] = useState<InventoryEvent[]>([]); // user confirmed event
+  const [hasLoadedConfirmedEvents, setHasLoadedConfirmedEvents] =
+    useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [manualEventType, setManualEventType] =
     useState<InventoryEventType>("PURCHASED");
@@ -38,6 +49,11 @@ export function OperationalInputPanel() {
   const [manualValidationError, setManualValidationError] = useState<
     string | null
   >(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [eventEditDraft, setEventEditDraft] = useState<EventEditDraft | null>(
+    null,
+  );
+  const [eventEditError, setEventEditError] = useState<string | null>(null);
   const projectedInventory = projectInventory(confirmedEvents);
   const recommendations = scoreInventory(projectedInventory);
   const workflowStatus = getWorkflowStatus({
@@ -45,6 +61,31 @@ export function OperationalInputPanel() {
     candidateCount: candidateItems.length,
     confirmedEventCount: confirmedEvents.length,
   });
+
+  useEffect(() => {
+    const loadEvents = window.setTimeout(() => {
+      setConfirmedEvents(readConfirmedEvents());
+      setHasLoadedConfirmedEvents(true);
+    }, 0);
+
+    return () => window.clearTimeout(loadEvents);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedConfirmedEvents) {
+      return;
+    }
+
+    if (confirmedEvents.length === 0) {
+      window.localStorage.removeItem(CONFIRMED_EVENTS_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage.setItem(
+      CONFIRMED_EVENTS_STORAGE_KEY,
+      JSON.stringify(confirmedEvents),
+    );
+  }, [confirmedEvents, hasLoadedConfirmedEvents]);
 
   function handleMockExtraction() {
     const mockOutput: unknown = [
@@ -185,8 +226,101 @@ export function OperationalInputPanel() {
       sourceText: operationalInput,
     }));
 
-    setConfirmedEvents(events);
+    setConfirmedEvents((currentEvents) => [...currentEvents, ...events]);
+    setCandidateItems([]);
     setValidationError(null);
+  }
+
+  function handleStartEventEdit(event: InventoryEvent) {
+    setEditingEventId(event.id);
+    setEventEditDraft({
+      type: event.type,
+      itemName: event.itemName,
+      quantity: String(event.quantity),
+      unit: event.unit ?? "",
+    });
+    setEventEditError(null);
+  }
+
+  function handleCancelEventEdit() {
+    setEditingEventId(null);
+    setEventEditDraft(null);
+    setEventEditError(null);
+  }
+
+  function updateEventEditDraft(
+    field: keyof EventEditDraft,
+    value: string,
+  ) {
+    setEventEditDraft((currentDraft) => {
+      if (!currentDraft) {
+        return currentDraft;
+      }
+
+      if (field === "type") {
+        return { ...currentDraft, type: value as InventoryEventType };
+      }
+
+      return { ...currentDraft, [field]: value };
+    });
+  }
+
+  function handleSaveEventEdit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editingEventId || !eventEditDraft) {
+      return;
+    }
+
+    const itemName = eventEditDraft.itemName.trim();
+    const quantity = Number(eventEditDraft.quantity);
+
+    if (itemName.length === 0) {
+      setEventEditError("Enter an item name.");
+      return;
+    }
+
+    if (
+      eventEditDraft.quantity.trim().length === 0 ||
+      !Number.isFinite(quantity) ||
+      quantity <= 0
+    ) {
+      setEventEditError("Enter a quantity greater than zero.");
+      return;
+    }
+
+    setConfirmedEvents((currentEvents) =>
+      currentEvents.map((currentEvent) =>
+        currentEvent.id === editingEventId
+          ? {
+              ...currentEvent,
+              type: eventEditDraft.type,
+              itemName,
+              quantity,
+              unit:
+                eventEditDraft.unit.trim().length > 0
+                  ? eventEditDraft.unit.trim()
+                  : undefined,
+            }
+          : currentEvent,
+      ),
+    );
+    handleCancelEventEdit();
+  }
+
+  function handleDeleteEvent(eventId: string) {
+    setConfirmedEvents((currentEvents) =>
+      currentEvents.filter((event) => event.id !== eventId),
+    );
+
+    if (editingEventId === eventId) {
+      handleCancelEventEdit();
+    }
+  }
+
+  function handleClearEventHistory() {
+    setConfirmedEvents([]);
+    handleCancelEventEdit();
   }
 
   return (
@@ -415,7 +549,18 @@ export function OperationalInputPanel() {
         </div>
 
         <div className="workflow-section confirmed-events">
-          <h2>Event history</h2>
+          <div className="event-history-header">
+            <h2>Event history</h2>
+            {confirmedEvents.length > 0 ? (
+              <button
+                className="danger-button compact-button"
+                type="button"
+                onClick={handleClearEventHistory}
+              >
+                Clear event history
+              </button>
+            ) : null}
+          </div>
           {confirmedEvents.length > 0 ? (
             <>
             <p className="validation-success">
@@ -424,17 +569,125 @@ export function OperationalInputPanel() {
 
             <div className="event-list">
               {confirmedEvents.map((event) => (
-                <article className="event-row" key={event.id}>
-                  <span className="event-type">{event.type}</span>
-                  <span>{event.itemName}</span>
-                  <span>
-                    {event.quantity}
-                    {event.unit ? ` ${event.unit}` : ""}
-                  </span>
-                  <time dateTime={event.occurredAt}>
-                    {formatDisplayDateTime(event.occurredAt)}
-                  </time>
-                </article>
+                editingEventId === event.id && eventEditDraft ? (
+                  <form
+                    className="event-row event-row-editing"
+                    key={event.id}
+                    onSubmit={handleSaveEventEdit}
+                  >
+                    <div className="event-edit-fields">
+                      <label>
+                        Event type
+                        <select
+                          value={eventEditDraft.type}
+                          onChange={(inputEvent) =>
+                            updateEventEditDraft(
+                              "type",
+                              inputEvent.target.value,
+                            )
+                          }
+                        >
+                          {EVENT_TYPE_OPTIONS.map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label>
+                        Item name
+                        <input
+                          type="text"
+                          value={eventEditDraft.itemName}
+                          onChange={(inputEvent) =>
+                            updateEventEditDraft(
+                              "itemName",
+                              inputEvent.target.value,
+                            )
+                          }
+                        />
+                      </label>
+
+                      <label>
+                        Quantity
+                        <input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={eventEditDraft.quantity}
+                          onChange={(inputEvent) =>
+                            updateEventEditDraft(
+                              "quantity",
+                              inputEvent.target.value,
+                            )
+                          }
+                        />
+                      </label>
+
+                      <label>
+                        Unit
+                        <input
+                          type="text"
+                          value={eventEditDraft.unit}
+                          onChange={(inputEvent) =>
+                            updateEventEditDraft(
+                              "unit",
+                              inputEvent.target.value,
+                            )
+                          }
+                        />
+                      </label>
+                    </div>
+
+                    <div className="event-actions">
+                      <button className="compact-button" type="submit">
+                        Save
+                      </button>
+                      <button
+                        className="secondary-button compact-button"
+                        type="button"
+                        onClick={handleCancelEventEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    {eventEditError ? (
+                      <p className="validation-error event-edit-error" role="alert">
+                        {eventEditError}
+                      </p>
+                    ) : null}
+                  </form>
+                ) : (
+                  <article className="event-row" key={event.id}>
+                    <span className="event-type">{event.type}</span>
+                    <span>{event.itemName}</span>
+                    <span>
+                      {event.quantity}
+                      {event.unit ? ` ${event.unit}` : ""}
+                    </span>
+                    <time dateTime={event.occurredAt}>
+                      {formatDisplayDateTime(event.occurredAt)}
+                    </time>
+                    <div className="event-actions">
+                      <button
+                        className="secondary-button compact-button"
+                        type="button"
+                        onClick={() => handleStartEventEdit(event)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="danger-button compact-button"
+                        type="button"
+                        onClick={() => handleDeleteEvent(event.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </article>
+                )
               ))}
             </div>
             </>
@@ -550,4 +803,47 @@ function formatDisplayDateTime(isoDate: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(isoDate));
+}
+
+function readConfirmedEvents(): InventoryEvent[] {
+  try {
+    const storedEvents = window.localStorage.getItem(
+      CONFIRMED_EVENTS_STORAGE_KEY,
+    );
+
+    if (!storedEvents) {
+      return [];
+    }
+
+    const parsedEvents: unknown = JSON.parse(storedEvents);
+
+    if (!Array.isArray(parsedEvents)) {
+      return [];
+    }
+
+    return parsedEvents.filter(isInventoryEvent);
+  } catch {
+    return [];
+  }
+}
+
+function isInventoryEvent(value: unknown): value is InventoryEvent {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const event = value as Partial<InventoryEvent>;
+
+  return (
+    typeof event.id === "string" &&
+    EVENT_TYPE_OPTIONS.includes(event.type as InventoryEventType) &&
+    typeof event.itemName === "string" &&
+    typeof event.quantity === "number" &&
+    Number.isFinite(event.quantity) &&
+    event.quantity > 0 &&
+    typeof event.occurredAt === "string" &&
+    (event.unit === undefined || typeof event.unit === "string") &&
+    (event.notes === undefined || typeof event.notes === "string") &&
+    (event.sourceText === undefined || typeof event.sourceText === "string")
+  );
 }

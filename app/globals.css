@@ -125,6 +125,15 @@ button {
   color: var(--accent-strong);
 }
 
+.danger-button {
+  background: #b42318;
+}
+
+.compact-button {
+  padding: 7px 10px;
+  font-size: 0.86rem;
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
@@ -257,7 +266,9 @@ button:disabled {
 .candidate-details input,
 .candidate-details select,
 .manual-entry-fields input,
-.manual-entry-fields select {
+.manual-entry-fields select,
+.event-edit-fields input,
+.event-edit-fields select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -297,6 +308,13 @@ button:disabled {
   gap: 10px;
 }
 
+.event-history-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .event-list {
   display: grid;
   gap: 8px;
@@ -304,7 +322,7 @@ button:disabled {
 
 .event-row {
   display: grid;
-  grid-template-columns: minmax(110px, 0.8fr) minmax(120px, 1fr) minmax(90px, 0.7fr) minmax(190px, 1.4fr);
+  grid-template-columns: minmax(110px, 0.8fr) minmax(120px, 1fr) minmax(90px, 0.7fr) minmax(150px, 1fr) auto;
   gap: 10px;
   align-items: center;
   border: 1px solid var(--border);
@@ -318,6 +336,34 @@ button:disabled {
 .event-type {
   color: var(--accent-strong);
   font-weight: 700;
+}
+
+.event-row-editing {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.event-edit-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.event-edit-fields label {
+  display: grid;
+  gap: 5px;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.event-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.event-edit-error {
+  grid-column: 1 / -1;
 }
 
 .workflow-snapshot {
@@ -380,6 +426,21 @@ button:disabled {
 
   .event-row {
     grid-template-columns: 1fr;
+  }
+
+  .event-history-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .event-row-editing,
+  .event-edit-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .event-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .candidate-details,
