@@ -41,6 +41,7 @@ export function OperationalInputPanel() {
   const [hasLoadedConfirmedEvents, setHasLoadedConfirmedEvents] =
     useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [manualEventType, setManualEventType] =
     useState<InventoryEventType>("PURCHASED");
   const [manualItemName, setManualItemName] = useState("");
@@ -87,41 +88,45 @@ export function OperationalInputPanel() {
     );
   }, [confirmedEvents, hasLoadedConfirmedEvents]);
 
-  function handleMockExtraction() {
-    const mockOutput: unknown = [
-      {
-        type: "PURCHASED",
-        name: "eggs",
-        quantity: 12,
-        unit: "count",
-        confidence: 0.96,
-      },
-      {
-        type: "PURCHASED",
-        name: "milk",
-        quantity: 1,
-        unit: "bottle",
-        confidence: 0.91,
-      },
-      {
-        type: "CONSUMED",
-        name: "eggs",
-        quantity: 3,
-        unit: "count",
-        confidence: 0.89,
-      },
-    ];
-
-    const result = extractedCandidateItemsSchema.safeParse(mockOutput);
-
-    if (!result.success) {
-      setCandidateItems([]);
-      setValidationError("Mock extraction failed validation.");
-      return;
-    }
-
-    setCandidateItems(result.data);
+  async function handleTextExtraction() {
+    setIsExtracting(true);
     setValidationError(null);
+
+    try {
+      const response = await fetch("/api/extract", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: operationalInput }),
+      });
+      const responseBody: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setCandidateItems([]);
+        setValidationError(
+          getApiErrorMessage(responseBody) ?? "Unable to extract candidates.",
+        );
+        return;
+      }
+
+      const result = extractedCandidateItemsSchema.safeParse(
+        getResponseCandidates(responseBody),
+      );
+
+      if (!result.success) {
+        setCandidateItems([]);
+        setValidationError("Extraction response failed validation.");
+        return;
+      }
+
+      setCandidateItems(result.data);
+    } catch {
+      setCandidateItems([]);
+      setValidationError("Unable to extract candidates. Please try again.");
+    } finally {
+      setIsExtracting(false);
+    }
   }
 
   function handleUseSampleInput() {
@@ -372,10 +377,10 @@ export function OperationalInputPanel() {
 
               <button
                 type="button"
-                disabled={operationalInput.trim().length === 0}
-                onClick={handleMockExtraction}
+                disabled={operationalInput.trim().length === 0 || isExtracting}
+                onClick={handleTextExtraction}
               >
-                Extract candidate events
+                {isExtracting ? "Extracting..." : "Extract candidate events"}
               </button>
             </section>
 
@@ -846,4 +851,29 @@ function isInventoryEvent(value: unknown): value is InventoryEvent {
     (event.notes === undefined || typeof event.notes === "string") &&
     (event.sourceText === undefined || typeof event.sourceText === "string")
   );
+}
+
+function getApiErrorMessage(responseBody: unknown) {
+  if (
+    responseBody &&
+    typeof responseBody === "object" &&
+    "error" in responseBody &&
+    typeof responseBody.error === "string"
+  ) {
+    return responseBody.error;
+  }
+
+  return null;
+}
+
+function getResponseCandidates(responseBody: unknown) {
+  if (
+    responseBody &&
+    typeof responseBody === "object" &&
+    "candidates" in responseBody
+  ) {
+    return responseBody.candidates;
+  }
+
+  return undefined;
 }
