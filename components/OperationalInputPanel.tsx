@@ -55,6 +55,7 @@ export function OperationalInputPanel() {
     null,
   );
   const [eventEditError, setEventEditError] = useState<string | null>(null);
+  // Inventory and recommendations rebuild from confirmed events.
   const projectedInventory = projectInventory(confirmedEvents);
   const recommendations = scoreInventory(projectedInventory);
   const workflowStatus = getWorkflowStatus({
@@ -64,6 +65,7 @@ export function OperationalInputPanel() {
   });
 
   useEffect(() => {
+    // Load saved history before syncing later changes back to storage.
     const loadEvents = window.setTimeout(() => {
       setConfirmedEvents(readConfirmedEvents());
       setHasLoadedConfirmedEvents(true);
@@ -73,6 +75,7 @@ export function OperationalInputPanel() {
   }, []);
 
   useEffect(() => {
+    // Confirmed events survive refreshes; review candidates do not.
     if (!hasLoadedConfirmedEvents) {
       return;
     }
@@ -88,6 +91,7 @@ export function OperationalInputPanel() {
     );
   }, [confirmedEvents, hasLoadedConfirmedEvents]);
 
+  // Text input creates candidates only. Confirmation happens later.
   async function handleTextExtraction() {
     setIsExtracting(true);
     setValidationError(null);
@@ -210,6 +214,7 @@ export function OperationalInputPanel() {
     );
   }
 
+  // Only reviewed candidates become confirmed events.
   function handleConfirmCandidates() {
     const result = extractedCandidateItemsSchema.safeParse(candidateItems);
 
@@ -253,10 +258,7 @@ export function OperationalInputPanel() {
     setEventEditError(null);
   }
 
-  function updateEventEditDraft(
-    field: keyof EventEditDraft,
-    value: string,
-  ) {
+  function updateEventEditDraft(field: keyof EventEditDraft, value: string) {
     setEventEditDraft((currentDraft) => {
       if (!currentDraft) {
         return currentDraft;
@@ -423,7 +425,9 @@ export function OperationalInputPanel() {
                     <input
                       type="text"
                       value={manualItemName}
-                      onChange={(event) => setManualItemName(event.target.value)}
+                      onChange={(event) =>
+                        setManualItemName(event.target.value)
+                      }
                     />
                   </label>
 
@@ -434,7 +438,9 @@ export function OperationalInputPanel() {
                       min="0"
                       step="any"
                       value={manualQuantity}
-                      onChange={(event) => setManualQuantity(event.target.value)}
+                      onChange={(event) =>
+                        setManualQuantity(event.target.value)
+                      }
                     />
                   </label>
 
@@ -468,87 +474,88 @@ export function OperationalInputPanel() {
           <h2>Review queue</h2>
           {candidateItems.length > 0 ? (
             <>
-            <p className="validation-success">
-              {candidateItems.length} candidate events ready for review.
-            </p>
-            {candidateItems.map((candidate, index) => (
-              <article className="candidate-card" key={index}>
-                <p className="candidate-label">Candidate {index + 1}</p>
+              <p className="validation-success">
+                {candidateItems.length} candidate events ready for review.
+              </p>
+              {candidateItems.map((candidate, index) => (
+                <article className="candidate-card" key={index}>
+                  <p className="candidate-label">Candidate {index + 1}</p>
 
-                <div className="candidate-details">
-                  <label>
-                    Event type
-                    <select
-                      value={candidate.type}
-                      onChange={(event) =>
-                        updateCandidateType(
-                          index,
-                          event.target.value as InventoryEventType,
-                        )
-                      }
-                    >
-                      {EVENT_TYPE_OPTIONS.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <div className="candidate-details">
+                    <label>
+                      Event type
+                      <select
+                        value={candidate.type}
+                        onChange={(event) =>
+                          updateCandidateType(
+                            index,
+                            event.target.value as InventoryEventType,
+                          )
+                        }
+                      >
+                        {EVENT_TYPE_OPTIONS.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
 
-                  <label>
-                    Name
-                    <input
-                      type="text"
-                      value={candidate.name}
-                      onChange={(event) =>
-                        updateCandidateName(index, event.target.value)
-                      }
-                    />
-                  </label>
+                    <label>
+                      Name
+                      <input
+                        type="text"
+                        value={candidate.name}
+                        onChange={(event) =>
+                          updateCandidateName(index, event.target.value)
+                        }
+                      />
+                    </label>
 
-                  <label>
-                    Quantity
-                    <input
-                      type="number"
-                      min="0"
-                      step="any"
-                      value={candidate.quantity ?? ""}
-                      onChange={(event) =>
-                        updateCandidateQuantity(index, event.target.value)
-                      }
-                    />
-                  </label>
+                    <label>
+                      Quantity
+                      <input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={candidate.quantity ?? ""}
+                        onChange={(event) =>
+                          updateCandidateQuantity(index, event.target.value)
+                        }
+                      />
+                    </label>
 
-                  <label>
-                    Unit
-                    <input
-                      type="text"
-                      value={candidate.unit ?? ""}
-                      onChange={(event) =>
-                        updateCandidateUnit(index, event.target.value)
-                      }
-                    />
-                  </label>
+                    <label>
+                      Unit
+                      <input
+                        type="text"
+                        value={candidate.unit ?? ""}
+                        onChange={(event) =>
+                          updateCandidateUnit(index, event.target.value)
+                        }
+                      />
+                    </label>
 
-                  <div className="candidate-readonly-field">
-                    <span>Confidence</span>
-                    <strong>
-                      {candidate.confidence !== undefined
-                        ? `${Math.round(candidate.confidence * 100)}%`
-                        : "Not provided"}
-                    </strong>
+                    <div className="candidate-readonly-field">
+                      <span>Confidence</span>
+                      <strong>
+                        {candidate.confidence !== undefined
+                          ? `${Math.round(candidate.confidence * 100)}%`
+                          : "Not provided"}
+                      </strong>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              ))}
 
-            <button type="button" onClick={handleConfirmCandidates}>
-              Confirm reviewed candidates
-            </button>
+              <button type="button" onClick={handleConfirmCandidates}>
+                Confirm reviewed candidates
+              </button>
             </>
           ) : (
             <p className="empty-state">
-              No events in the review queue. Capture text or add a structured entry.
+              No events in the review queue. Capture text or add a structured
+              entry.
             </p>
           )}
         </div>
@@ -568,137 +575,141 @@ export function OperationalInputPanel() {
           </div>
           {confirmedEvents.length > 0 ? (
             <>
-            <p className="validation-success">
-              {confirmedEvents.length} inventory events confirmed.
-            </p>
+              <p className="validation-success">
+                {confirmedEvents.length} inventory events confirmed.
+              </p>
 
-            <div className="event-list">
-              {confirmedEvents.map((event) => (
-                editingEventId === event.id && eventEditDraft ? (
-                  <form
-                    className="event-row event-row-editing"
-                    key={event.id}
-                    onSubmit={handleSaveEventEdit}
-                  >
-                    <div className="event-edit-fields">
-                      <label>
-                        Event type
-                        <select
-                          value={eventEditDraft.type}
-                          onChange={(inputEvent) =>
-                            updateEventEditDraft(
-                              "type",
-                              inputEvent.target.value,
-                            )
-                          }
+              <div className="event-list">
+                {confirmedEvents.map((event) =>
+                  editingEventId === event.id && eventEditDraft ? (
+                    <form
+                      className="event-row event-row-editing"
+                      key={event.id}
+                      onSubmit={handleSaveEventEdit}
+                    >
+                      <div className="event-edit-fields">
+                        <label>
+                          Event type
+                          <select
+                            value={eventEditDraft.type}
+                            onChange={(inputEvent) =>
+                              updateEventEditDraft(
+                                "type",
+                                inputEvent.target.value,
+                              )
+                            }
+                          >
+                            {EVENT_TYPE_OPTIONS.map((type) => (
+                              <option key={type} value={type}>
+                                {type}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+
+                        <label>
+                          Item name
+                          <input
+                            type="text"
+                            value={eventEditDraft.itemName}
+                            onChange={(inputEvent) =>
+                              updateEventEditDraft(
+                                "itemName",
+                                inputEvent.target.value,
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label>
+                          Quantity
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={eventEditDraft.quantity}
+                            onChange={(inputEvent) =>
+                              updateEventEditDraft(
+                                "quantity",
+                                inputEvent.target.value,
+                              )
+                            }
+                          />
+                        </label>
+
+                        <label>
+                          Unit
+                          <input
+                            type="text"
+                            value={eventEditDraft.unit}
+                            onChange={(inputEvent) =>
+                              updateEventEditDraft(
+                                "unit",
+                                inputEvent.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      <div className="event-actions">
+                        <button className="compact-button" type="submit">
+                          Save
+                        </button>
+                        <button
+                          className="secondary-button compact-button"
+                          type="button"
+                          onClick={handleCancelEventEdit}
                         >
-                          {EVENT_TYPE_OPTIONS.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                          Cancel
+                        </button>
+                      </div>
 
-                      <label>
-                        Item name
-                        <input
-                          type="text"
-                          value={eventEditDraft.itemName}
-                          onChange={(inputEvent) =>
-                            updateEventEditDraft(
-                              "itemName",
-                              inputEvent.target.value,
-                            )
-                          }
-                        />
-                      </label>
-
-                      <label>
-                        Quantity
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={eventEditDraft.quantity}
-                          onChange={(inputEvent) =>
-                            updateEventEditDraft(
-                              "quantity",
-                              inputEvent.target.value,
-                            )
-                          }
-                        />
-                      </label>
-
-                      <label>
-                        Unit
-                        <input
-                          type="text"
-                          value={eventEditDraft.unit}
-                          onChange={(inputEvent) =>
-                            updateEventEditDraft(
-                              "unit",
-                              inputEvent.target.value,
-                            )
-                          }
-                        />
-                      </label>
-                    </div>
-
-                    <div className="event-actions">
-                      <button className="compact-button" type="submit">
-                        Save
-                      </button>
-                      <button
-                        className="secondary-button compact-button"
-                        type="button"
-                        onClick={handleCancelEventEdit}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    {eventEditError ? (
-                      <p className="validation-error event-edit-error" role="alert">
-                        {eventEditError}
-                      </p>
-                    ) : null}
-                  </form>
-                ) : (
-                  <article className="event-row" key={event.id}>
-                    <span className="event-type">{event.type}</span>
-                    <span>{event.itemName}</span>
-                    <span>
-                      {event.quantity}
-                      {event.unit ? ` ${event.unit}` : ""}
-                    </span>
-                    <time dateTime={event.occurredAt}>
-                      {formatDisplayDateTime(event.occurredAt)}
-                    </time>
-                    <div className="event-actions">
-                      <button
-                        className="secondary-button compact-button"
-                        type="button"
-                        onClick={() => handleStartEventEdit(event)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="danger-button compact-button"
-                        type="button"
-                        onClick={() => handleDeleteEvent(event.id)}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </article>
-                )
-              ))}
-            </div>
+                      {eventEditError ? (
+                        <p
+                          className="validation-error event-edit-error"
+                          role="alert"
+                        >
+                          {eventEditError}
+                        </p>
+                      ) : null}
+                    </form>
+                  ) : (
+                    <article className="event-row" key={event.id}>
+                      <span className="event-type">{event.type}</span>
+                      <span>{event.itemName}</span>
+                      <span>
+                        {event.quantity}
+                        {event.unit ? ` ${event.unit}` : ""}
+                      </span>
+                      <time dateTime={event.occurredAt}>
+                        {formatDisplayDateTime(event.occurredAt)}
+                      </time>
+                      <div className="event-actions">
+                        <button
+                          className="secondary-button compact-button"
+                          type="button"
+                          onClick={() => handleStartEventEdit(event)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="danger-button compact-button"
+                          type="button"
+                          onClick={() => handleDeleteEvent(event.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  ),
+                )}
+              </div>
             </>
           ) : (
             <p className="empty-state">
-              No confirmed events. Reviewed candidates appear here after confirmation.
+              No confirmed events. Reviewed candidates appear here after
+              confirmation.
             </p>
           )}
         </div>
@@ -707,20 +718,21 @@ export function OperationalInputPanel() {
           <h2>Inventory state</h2>
           {projectedInventory.length > 0 ? (
             <>
-
-            {projectedInventory.map((item, index) => (
-              <article
-                className="inventory-card"
-                key={`${item.itemName}-${index}`}
-              >
-                <h3>{item.itemName}</h3>
-                <p>
-                  Quantity: {item.quantity}
-                  {item.unit ? ` ${item.unit}` : ""}
-                </p>
-                <p>Last updated: {formatDisplayDateTime(item.lastUpdatedAt)}</p>
-              </article>
-            ))}
+              {projectedInventory.map((item, index) => (
+                <article
+                  className="inventory-card"
+                  key={`${item.itemName}-${index}`}
+                >
+                  <h3>{item.itemName}</h3>
+                  <p>
+                    Quantity: {item.quantity}
+                    {item.unit ? ` ${item.unit}` : ""}
+                  </p>
+                  <p>
+                    Last updated: {formatDisplayDateTime(item.lastUpdatedAt)}
+                  </p>
+                </article>
+              ))}
             </>
           ) : (
             <p className="empty-state">
@@ -733,22 +745,24 @@ export function OperationalInputPanel() {
           <h2>Recommendations</h2>
           {recommendations.length > 0 ? (
             <>
+              {recommendations.map((recommendation) => (
+                <article
+                  className="recommendation-card"
+                  key={recommendation.id}
+                >
+                  <p className="recommendation-type">{recommendation.type}</p>
+                  <h3>{recommendation.itemName}</h3>
+                  <p>Score: {recommendation.score}</p>
 
-            {recommendations.map((recommendation) => (
-              <article className="recommendation-card" key={recommendation.id}>
-                <p className="recommendation-type">{recommendation.type}</p>
-                <h3>{recommendation.itemName}</h3>
-                <p>Score: {recommendation.score}</p>
-
-                <ul>
-                  {recommendation.factors.map((factor) => (
-                    <li key={factor.label}>
-                      {factor.label}: {factor.explanation}
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+                  <ul>
+                    {recommendation.factors.map((factor) => (
+                      <li key={factor.label}>
+                        {factor.label}: {factor.explanation}
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
             </>
           ) : (
             <p className="empty-state">
@@ -758,7 +772,10 @@ export function OperationalInputPanel() {
         </div>
       </div>
 
-      <aside className="workflow-snapshot" aria-labelledby="workflow-snapshot-heading">
+      <aside
+        className="workflow-snapshot"
+        aria-labelledby="workflow-snapshot-heading"
+      >
         <h2 id="workflow-snapshot-heading">Workflow snapshot</h2>
         <dl className="snapshot-list">
           <div className="snapshot-item">

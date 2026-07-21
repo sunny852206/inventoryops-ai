@@ -8,6 +8,7 @@ type ExtractRequestBody = {
 export async function POST(request: Request) {
   let body: ExtractRequestBody;
 
+  // Read the JSON body sent by the client.
   try {
     body = (await request.json()) as ExtractRequestBody;
   } catch {
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     },
   ];
 
+  // Validate output before sending candidate data back to the client.
   const result = extractedCandidateItemsSchema.safeParse(mockOutput);
 
   if (!result.success) {
