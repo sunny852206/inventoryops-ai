@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractedCandidateItemsSchema } from "../../../lib/domain/schemas";
+import { extractCandidateEvents } from "../../../lib/ai/extraction";
 
 type ExtractRequestBody = {
   input?: unknown;
@@ -22,45 +23,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Input is required." }, { status: 400 });
   }
 
-  const mockOutput: unknown = [
-    {
-      type: "PURCHASED",
-      name: "eggs",
-      quantity: 12,
-      unit: "count",
-      notes: "Extracted from operational input.",
-      confidence: 0.94,
-      source: "AI",
-    },
-    {
-      type: "PURCHASED",
-      name: "milk",
-      quantity: 1,
-      unit: "bottle",
-      notes: "Extracted from operational input.",
-      confidence: 0.91,
-      source: "AI",
-    },
-    {
-      type: "CONSUMED",
-      name: "eggs",
-      quantity: 3,
-      unit: "count",
-      notes: "Extracted from operational input.",
-      confidence: 0.88,
-      source: "AI",
-    },
-  ];
+  try {
+    const candidates = await extractCandidateEvents(body.input.trim());
 
-  // Validate output before sending candidate data back to the client.
-  const result = extractedCandidateItemsSchema.safeParse(mockOutput);
-
-  if (!result.success) {
+    return NextResponse.json({ candidates });
+  } catch (error) {
+    console.error("Extraction failed:", error);
     return NextResponse.json(
-      { error: "Extraction output failed validation." },
-      { status: 422 },
+      { error: "Extraction failed. Please try again." },
+      { status: 500 },
     );
   }
-
-  return NextResponse.json({ candidates: result.data });
 }
