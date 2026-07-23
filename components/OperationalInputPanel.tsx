@@ -32,6 +32,12 @@ type EventEditDraft = {
   unit: string;
 };
 
+type ExtractionStatus =
+  | { state: "idle" }
+  | { state: "loading" }
+  | { state: "success"; count: number; durationMs: number }
+  | { state: "error"; message: string };
+
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
   const [candidateItems, setCandidateItems] = useState<
@@ -42,6 +48,9 @@ export function OperationalInputPanel() {
     useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractStatus, setExtractStatus] = useState<ExtractionStatus>({
+    state: "idle",
+  });
   const [manualEventType, setManualEventType] =
     useState<InventoryEventType>("PURCHASED");
   const [manualItemName, setManualItemName] = useState("");
@@ -93,7 +102,9 @@ export function OperationalInputPanel() {
 
   // Text input creates candidates only. Confirmation happens later.
   async function handleTextExtraction() {
+    const startTime = Date.now();
     setIsExtracting(true);
+    setExtractStatus({ state: "loading" });
     setValidationError(null);
 
     try {
@@ -108,9 +119,11 @@ export function OperationalInputPanel() {
 
       if (!response.ok) {
         setCandidateItems([]);
-        setValidationError(
-          getApiErrorMessage(responseBody) ?? "Unable to extract candidates.",
-        );
+        setExtractStatus({
+          state: "error",
+          message:
+            getApiErrorMessage(responseBody) ?? "Unable to extract candidates.",
+        });
         return;
       }
 
@@ -120,14 +133,25 @@ export function OperationalInputPanel() {
 
       if (!result.success) {
         setCandidateItems([]);
-        setValidationError("Extraction response failed validation.");
+        setExtractStatus({
+          state: "error",
+          message: "Extraction response failed validation.",
+        });
         return;
       }
 
       setCandidateItems(result.data);
+      setExtractStatus({
+        state: "success",
+        count: result.data.length,
+        durationMs: Date.now() - startTime,
+      });
     } catch {
       setCandidateItems([]);
-      setValidationError("Unable to extract candidates. Please try again.");
+      setExtractStatus({
+        state: "error",
+        message: "Unable to extract candidates. Please try again.",
+      });
     } finally {
       setIsExtracting(false);
     }
@@ -384,6 +408,19 @@ export function OperationalInputPanel() {
               >
                 {isExtracting ? "Extracting..." : "Extract candidate events"}
               </button>
+              {extractStatus.state === "success" ? (
+                <p className="extraction-status extraction-status-success">
+                  Last extraction: success · {extractStatus.count}{" "}
+                  {extractStatus.count === 1 ? "candidate" : "candidates"} ·{" "}
+                  {formatDurationSeconds(extractStatus.durationMs)}s
+                </p>
+              ) : null}
+
+              {extractStatus.state === "error" ? (
+                <p className="extraction-status extraction-status-error" role="alert">
+                  Last extraction: failed · {extractStatus.message}
+                </p>
+              ) : null}
             </section>
 
             <section
@@ -893,4 +930,8 @@ function getResponseCandidates(responseBody: unknown) {
   }
 
   return undefined;
+}
+
+function formatDurationSeconds(durationMs: number) {
+  return Math.round(durationMs / 100) / 10;
 }

@@ -144,6 +144,20 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.extraction-status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.extraction-status-success {
+  color: #067647;
+}
+
+.extraction-status-error {
+  color: #b42318;
+}
+
 .validation-error {
   margin: 0;
   color: #b42318;
