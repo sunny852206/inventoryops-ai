@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { extractedCandidateItemsSchema } from "../../../lib/domain/schemas";
 import { extractCandidateEvents } from "../../../lib/ai/extraction";
 
 type ExtractRequestBody = {
