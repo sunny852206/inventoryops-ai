@@ -1,0 +1,119 @@
+[
+  {
+    "name": "buy and use eggs",
+    "input": "Bought 12 eggs and 1 bottle of milk. Used 3 eggs.",
+    "expected": [
+      {
+        "type": "PURCHASED",
+        "name": "eggs",
+        "quantity": 12,
+        "unit": "count"
+      },
+      {
+        "type": "PURCHASED",
+        "name": "milk",
+        "quantity": 1,
+        "unit": "bottle"
+      },
+      {
+        "type": "CONSUMED",
+        "name": "eggs",
+        "quantity": 3,
+        "unit": "count"
+      }
+    ]
+  },
+  {
+    "name": "throw away bananas and buy apples",
+    "input": "Threw away 2 bananas and bought 6 apples.",
+    "expected": [
+      {
+        "type": "DISCARDED",
+        "name": "bananas",
+        "quantity": 2
+      },
+      {
+        "type": "PURCHASED",
+        "name": "apples",
+        "quantity": 6
+      }
+    ]
+  },
+  {
+    "name": "correct current egg count",
+    "input": "Actually I have 8 eggs now, not 12.",
+    "expected": [
+      {
+        "type": "CORRECTED",
+        "name": "eggs",
+        "quantity": 8
+      }
+    ]
+  },
+  {
+    "name": "use pantry items for cooking",
+    "input": "Used 2 tomatoes and 1 onion for dinner.",
+    "expected": [
+      {
+        "type": "CONSUMED",
+        "name": "tomatoes",
+        "quantity": 2
+      },
+      {
+        "type": "CONSUMED",
+        "name": "onion",
+        "quantity": 1
+      }
+    ]
+  },
+  {
+    "name": "expired item was thrown away",
+    "input": "The rice expired, so I threw away 1 bag.",
+    "expected": [
+      {
+        "type": "DISCARDED",
+        "name": "rice",
+        "quantity": 1,
+        "unit": "bag"
+      }
+    ]
+  },
+  {
+    "name": "received items from someone",
+    "input": "My mom gave me 4 cans of tuna.",
+    "expected": [
+      {
+        "type": "PURCHASED",
+        "name": "tuna",
+        "quantity": 4,
+        "unit": "can"
+      }
+    ]
+  },
+  {
+    "name": "set current apple count",
+    "input": "There are 5 apples left.",
+    "expected": [
+      {
+        "type": "CORRECTED",
+        "name": "apples",
+        "quantity": 5
+      }
+    ]
+  },
+  {
+    "name": "ignore preference text",
+    "input": "I like eggs and milk.",
+    "expected": []
+  },
+  {
+    "name": "ignore future shopping plan",
+    "input": "Need to buy bananas tomorrow.",
+    "expected": []
+  },
+  {
+    "name": "ignore general low stock comment",
+    "input": "Milk is getting low.",
+    "expected": []
+  }
+]
