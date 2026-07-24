@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   extractedCandidateItemSchema,
   extractedCandidateItemsSchema,
@@ -9,6 +9,7 @@ import type {
   ExtractedCandidateItem,
   InventoryEvent,
   InventoryEventType,
+  Recommendation,
 } from "../lib/domain/types";
 import { projectInventory } from "../lib/domain/projection";
 import { scoreInventory } from "../lib/domain/scoring";
@@ -25,6 +26,15 @@ const EVENT_TYPE_OPTIONS: InventoryEventType[] = [
 
 const CONFIRMED_EVENTS_STORAGE_KEY = "inventoryops.confirmedEvents";
 
+const RECOMMENDATION_GROUPS: Array<{
+  type: Recommendation["type"];
+  label: string;
+}> = [
+  { type: "USE_SOON", label: "Use soon" },
+  { type: "RESTOCK_SOON", label: "Restock soon" },
+  { type: "AVOID_DUPLICATE", label: "Avoid duplicate" },
+];
+
 type EventEditDraft = {
   type: InventoryEventType;
   itemName: string;
@@ -37,6 +47,16 @@ type ExtractionStatus =
   | { state: "loading" }
   | { state: "success"; count: number; durationMs: number }
   | { state: "error"; message: string };
+
+type ActionPlanResult = {
+  explanation: string;
+  recommendationSnapshot: string;
+};
+
+type ActionPlanError = {
+  message: string;
+  recommendationSnapshot: string;
+};
 
 export function OperationalInputPanel() {
   const [operationalInput, setOperationalInput] = useState("");
@@ -64,9 +84,30 @@ export function OperationalInputPanel() {
     null,
   );
   const [eventEditError, setEventEditError] = useState<string | null>(null);
+  const [actionPlan, setActionPlan] = useState<ActionPlanResult | null>(null);
+  const [isGeneratingActionPlan, setIsGeneratingActionPlan] = useState(false);
+  const [actionPlanError, setActionPlanError] = useState<ActionPlanError | null>(
+    null,
+  );
   // Inventory and recommendations rebuild from confirmed events.
-  const projectedInventory = projectInventory(confirmedEvents);
-  const recommendations = scoreInventory(projectedInventory);
+  const projectedInventory = useMemo(
+    () => projectInventory(confirmedEvents),
+    [confirmedEvents],
+  );
+  const recommendations = useMemo(
+    () => scoreInventory(projectedInventory),
+    [projectedInventory],
+  );
+  const recommendationSnapshot = JSON.stringify(recommendations);
+  const recommendationGroups = groupRecommendations(recommendations);
+  const currentActionPlan =
+    actionPlan?.recommendationSnapshot === recommendationSnapshot
+      ? actionPlan.explanation
+      : null;
+  const currentActionPlanError =
+    actionPlanError?.recommendationSnapshot === recommendationSnapshot
+      ? actionPlanError.message
+      : null;
   const workflowStatus = getWorkflowStatus({
     hasInput: operationalInput.trim().length > 0,
     candidateCount: candidateItems.length,
@@ -352,6 +393,47 @@ export function OperationalInputPanel() {
   function handleClearEventHistory() {
     setConfirmedEvents([]);
     handleCancelEventEdit();
+  }
+
+  async function handleGenerateActionPlan() {
+    setIsGeneratingActionPlan(true);
+    setActionPlanError(null);
+
+    try {
+      const response = await fetch("/api/explain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ recommendations }),
+      });
+      const responseBody: unknown = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          getApiErrorMessage(responseBody) ??
+            "Unable to generate an action plan.",
+        );
+      }
+
+      const explanation = getResponseExplanation(responseBody);
+
+      if (!explanation) {
+        throw new Error("Action plan response failed validation.");
+      }
+
+      setActionPlan({ explanation, recommendationSnapshot });
+    } catch (error) {
+      setActionPlanError({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to generate an action plan.",
+        recommendationSnapshot,
+      });
+    } finally {
+      setIsGeneratingActionPlan(false);
+    }
   }
 
   return (
@@ -780,33 +862,73 @@ export function OperationalInputPanel() {
 
         <div className="workflow-section recommendations">
           <h2>Recommendations</h2>
-          {recommendations.length > 0 ? (
-            <>
-              {recommendations.map((recommendation) => (
-                <article
-                  className="recommendation-card"
-                  key={recommendation.id}
-                >
-                  <p className="recommendation-type">{recommendation.type}</p>
-                  <h3>{recommendation.itemName}</h3>
-                  <p>Score: {recommendation.score}</p>
-
-                  <ul>
-                    {recommendation.factors.map((factor) => (
-                      <li key={factor.label}>
-                        {factor.label}: {factor.explanation}
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-              ))}
-            </>
+          {recommendationGroups.length > 0 ? (
+            recommendationGroups.map((group) => (
+              <section className="recommendation-group" key={group.type}>
+                <h3>{group.label}</h3>
+                {group.recommendations.map((recommendation) => (
+                  <article
+                    className="recommendation-card"
+                    key={recommendation.id}
+                  >
+                    <p className="recommendation-action-label">
+                      {group.label}
+                    </p>
+                    <h4>{recommendation.itemName}</h4>
+                    <p>Score: {recommendation.score}</p>
+                    <p className="recommendation-reason">
+                      {recommendation.factors[0]?.explanation ??
+                        "No reason provided."}
+                    </p>
+                    <p className="recommendation-audit-detail">
+                      Rule: {recommendation.factors[0]?.label ?? "Not provided"}
+                    </p>
+                  </article>
+                ))}
+              </section>
+            ))
           ) : (
             <p className="empty-state">
               Recommendations appear when inventory state requires action.
             </p>
           )}
         </div>
+
+        <section
+          className="workflow-section suggested-next-steps"
+          aria-labelledby="suggested-next-steps-heading"
+        >
+          <h2 id="suggested-next-steps-heading">Suggested next steps</h2>
+          {recommendations.length > 0 ? (
+            <>
+              <button
+                type="button"
+                disabled={isGeneratingActionPlan}
+                onClick={handleGenerateActionPlan}
+              >
+                {isGeneratingActionPlan
+                  ? "Generating..."
+                  : currentActionPlan
+                    ? "Refresh action plan"
+                    : "Generate action plan"}
+              </button>
+
+              {currentActionPlan ? (
+                <p className="action-plan-output">{currentActionPlan}</p>
+              ) : null}
+
+              {currentActionPlanError ? (
+                <p className="action-plan-error" role="alert">
+                  {currentActionPlanError}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="empty-state">
+              Suggested next steps are available when recommendations appear.
+            </p>
+          )}
+        </section>
       </div>
 
       <aside
@@ -855,6 +977,15 @@ function getWorkflowStatus(input: {
   }
 
   return "Waiting for operational input.";
+}
+
+function groupRecommendations(recommendations: Recommendation[]) {
+  return RECOMMENDATION_GROUPS.map((group) => ({
+    ...group,
+    recommendations: recommendations
+      .filter((recommendation) => recommendation.type === group.type)
+      .sort((first, second) => second.score - first.score),
+  })).filter((group) => group.recommendations.length > 0);
 }
 
 function formatDisplayDateTime(isoDate: string) {
@@ -930,6 +1061,20 @@ function getResponseCandidates(responseBody: unknown) {
   }
 
   return undefined;
+}
+
+function getResponseExplanation(responseBody: unknown) {
+  if (
+    responseBody &&
+    typeof responseBody === "object" &&
+    "explanation" in responseBody &&
+    typeof responseBody.explanation === "string" &&
+    responseBody.explanation.trim().length > 0
+  ) {
+    return responseBody.explanation.trim();
+  }
+
+  return null;
 }
 
 function formatDurationSeconds(durationMs: number) {

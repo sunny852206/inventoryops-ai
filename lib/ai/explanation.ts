@@ -12,8 +12,26 @@ const explanationResponseSchema = {
   required: ["explanation"],
 } as const;
 
-export async function explainRecommendation(
-  recommendation: Recommendation,
+const ACTION_PLAN_DETAILS: Record<
+  Recommendation["type"],
+  { reason: string; suggestedAction: string }
+> = {
+  RESTOCK_SOON: {
+    reason: "This item is running low.",
+    suggestedAction: "Add this item to the next shopping list.",
+  },
+  AVOID_DUPLICATE: {
+    reason: "There is already plenty of this item.",
+    suggestedAction: "Use the current supply before buying more.",
+  },
+  USE_SOON: {
+    reason: "This item should be used soon.",
+    suggestedAction: "Use this item soon.",
+  },
+};
+
+export async function explainRecommendations(
+  recommendations: Recommendation[],
 ) {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -28,22 +46,22 @@ export async function explainRecommendation(
       {
         role: "system",
         content:
-          "Explain the provided deterministic inventory recommendation in one or two short, factual sentences. Use only the provided recommendation data. Do not invent inventory facts. Do not change, rank, or return the recommendation type, score, item name, or factors.",
+          "Write a concise, user-facing action plan from the provided items. Return one short numbered line per item, with no introduction or conclusion. Use the item name and suggested action to write natural, practical language. Keep the suggested action's meaning unchanged. Do not use technical, rule-based, or inventory-system wording. Do not invent pantry facts or add lifestyle suggestions. Do not suggest sharing, donating, meal planning, recipes, or actions beyond the provided suggestion. The provided items represent fixed deterministic decisions; only rewrite them for the user.",
       },
       {
         role: "user",
-        content: JSON.stringify({
-          type: recommendation.type,
-          itemName: recommendation.itemName,
-          score: recommendation.score,
-          factors: recommendation.factors,
-        }),
+        content: JSON.stringify(
+          recommendations.map((recommendation) => ({
+            itemName: recommendation.itemName,
+            ...ACTION_PLAN_DETAILS[recommendation.type],
+          })),
+        ),
       },
     ],
     text: {
       format: {
         type: "json_schema",
-        name: "recommendation_explanation",
+        name: "recommendation_action_plan",
         strict: true,
         schema: explanationResponseSchema,
       },
