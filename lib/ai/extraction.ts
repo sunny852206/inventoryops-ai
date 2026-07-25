@@ -1,8 +1,6 @@
 import OpenAI from "openai";
 import { extractedCandidateItemsSchema } from "../domain/schemas";
 
-const client = new OpenAI();
-
 const extractionResponseSchema = {
   type: "object",
   additionalProperties: false,
@@ -41,6 +39,7 @@ const extractionResponseSchema = {
 } as const;
 
 export async function extractCandidateEvents(input: string) {
+  const client = getOpenAIClient();
   const response = await client.responses.create({
     model: "gpt-5-mini",
     input: [
@@ -82,4 +81,14 @@ export async function extractCandidateEvents(input: string) {
   }
 
   return result.data;
+}
+
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+
+  return new OpenAI({ apiKey });
 }

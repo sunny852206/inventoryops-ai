@@ -33,13 +33,7 @@ const ACTION_PLAN_DETAILS: Record<
 export async function explainRecommendations(
   recommendations: Recommendation[],
 ) {
-  const apiKey = process.env.OPENAI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not configured.");
-  }
-
-  const client = new OpenAI({ apiKey });
+  const client = getOpenAIClient();
   const response = await client.responses.create({
     model: "gpt-5-mini",
     input: [
@@ -81,4 +75,14 @@ export async function explainRecommendations(
   }
 
   return parsedOutput.explanation.trim();
+}
+
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+
+  return new OpenAI({ apiKey });
 }
