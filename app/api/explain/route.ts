@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { explainRecommendation } from "../../../lib/ai/explanation";
+import { explainRecommendations } from "../../../lib/ai/explanation";
 
 const recommendationSchema = z
   .object({
@@ -22,7 +22,7 @@ const recommendationSchema = z
 
 const explainRequestSchema = z
   .object({
-    recommendation: recommendationSchema,
+    recommendations: z.array(recommendationSchema).min(1),
   })
   .strict();
 
@@ -42,19 +42,19 @@ export async function POST(request: Request) {
 
   if (!result.success) {
     return NextResponse.json(
-      { error: "Invalid recommendation request." },
+      { error: "Invalid recommendations request." },
       { status: 400 },
     );
   }
 
   try {
-    const explanation = await explainRecommendation(result.data.recommendation);
+    const explanation = await explainRecommendations(result.data.recommendations);
 
     return NextResponse.json({ explanation });
   } catch (error) {
-    console.error("Recommendation explanation failed:", error);
+    console.error("Action plan generation failed:", error);
     return NextResponse.json(
-      { error: "Recommendation explanation failed. Please try again." },
+      { error: "Action plan generation failed. Please try again." },
       { status: 500 },
     );
   }
