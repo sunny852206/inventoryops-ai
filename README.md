@@ -2,6 +2,9 @@
 
 > **AI suggests. User confirms. Code computes.**
 
+**Live Demo:** https://inventoryops-ai.vercel.app/
+**Tech Stack:** Next.js · TypeScript · OpenAI · Zod · Vitest · GitHub Actions
+
 InventoryOps AI is a full-stack demo that turns messy pantry notes into structured, reviewable inventory decisions.
 
 Users can write natural inventory updates like what they bought, used, threw away, or corrected. The app uses AI to extract candidate events, validates the result, sends it through review, and then uses confirmed events to project inventory and generate recommendations.
