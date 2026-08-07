@@ -1,19 +1,22 @@
 import type { InventoryEvent, InventoryItem } from "./types";
+import { normalizeItemName, normalizeUnit } from "./normalization";
 
 // Rebuilds current inventory state from confirmed inventory events.
 export function projectInventory(events: InventoryEvent[]): InventoryItem[] {
   const itemsByKey = new Map<string, InventoryItem>();
 
   for (const event of events) {
-    const key = getInventoryItemKey(event.itemName, event.unit);
+    const itemName = normalizeItemName(event.itemName);
+    const unit = normalizeUnit(event.unit);
+    const key = getInventoryItemKey(itemName, unit);
     const existingItem = itemsByKey.get(key);
     const currentQuantity = existingItem?.quantity ?? 0;
     const nextQuantity = applyEventQuantity(currentQuantity, event);
 
     itemsByKey.set(key, {
-      itemName: event.itemName,
+      itemName,
       quantity: nextQuantity,
-      unit: event.unit,
+      unit,
       lastUpdatedAt: getLatestIsoDate(
         existingItem?.lastUpdatedAt,
         event.occurredAt,
@@ -25,7 +28,7 @@ export function projectInventory(events: InventoryEvent[]): InventoryItem[] {
 }
 
 function getInventoryItemKey(itemName: string, unit?: string): string {
-  return `${itemName.trim().toLowerCase()}::${unit?.trim().toLowerCase() ?? ""}`;
+  return `${itemName}::${unit ?? ""}`;
 }
 
 function applyEventQuantity(
